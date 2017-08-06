@@ -1,0 +1,12 @@
+# ignore cache files
+*.pyc
+
+# ignore test files
+*test.py
+
+# jupyter stuff
+.ipynb_checkpoints/*
+*.ipynb
+
+# ignore log files
+*.log
