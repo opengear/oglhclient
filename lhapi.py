@@ -32,11 +32,17 @@ class LighthouseApi:
 
     def __init__(self):
         self.url = os.environ.get('OGLH_API_URL')
-        requests.packages.urllib3.disable_warnings()
-
-        self.api_url = self.url + '/api/v1'
         self.username = os.environ.get('OGLH_API_USER')
         self.password = os.environ.get('OGLH_API_PASS')
+
+        if not (self.url and self.username and self.password):
+            raise RuntimeError("""
+            Some of the required environment variables are not set, please refer
+            to the documentation: https://github.com/thiagolcmelo/oglhclient
+            """)
+
+        requests.packages.urllib3.disable_warnings()
+        self.api_url = self.url + '/api/v1'
         self.token = None
         self.pending_name_ids = {}
         self.s = requests.Session()
@@ -79,7 +85,7 @@ class LighthouseApi:
         params = urllib.urlencode({ k: v for k,v in kwargs.iteritems() \
             if not re.match('.*\{' + k + '\}', path) })
         return self._get_url(path, **kwargs), params
-        
+
     def _apply_ids(self, path, **kwargs):
         """
         in case of kwargs withs ids for objects and/or for parents
@@ -90,7 +96,7 @@ class LighthouseApi:
             if 'id' in kwargs:
                 kwargs[child_name] = kwargs['id']
                 del kwargs['id']
-                
+
             if re.match('.*\{id}', path):
                 parent_name = re.sub('s$','',re.sub('ies$','y',path.split('/')[1]))
                 if 'parent_id' in kwargs:
@@ -107,7 +113,7 @@ class LighthouseApi:
         url, params = self._get_url_params(path, *args, **kwargs)
         r = self.s.get(url, params=params, verify=False)
         return self._parse_response(r)
-    
+
     @ensure_auth
     def find(self, path, *args, **kwargs):
         if len(args) == 1 and len(kwargs) == 0:
@@ -116,7 +122,7 @@ class LighthouseApi:
             args = []
         elif len(args) == 0:
             kwargs = self._apply_ids(path, **kwargs)
-        
+
         url, params = self._get_url_params(path, *args, **kwargs)
         r = self.s.get(url, params=params, verify=False)
         return self._parse_response(r)
@@ -124,7 +130,7 @@ class LighthouseApi:
     @ensure_auth
     def post(self, path, data={}, **kwargs):
         kwargs = self._apply_ids(path, **kwargs)
-        
+
         if 'data' in kwargs and data == {}:
             data = kwargs['data']
             del kwargs['data']
