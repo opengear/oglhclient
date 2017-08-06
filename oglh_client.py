@@ -38,7 +38,6 @@ class LighthouseApi:
         self.username = os.environ.get('OGLH_API_USER')
         self.password = os.environ.get('OGLH_API_PASS')
         self.token = None
-        self.token_timeout = 5 * 60
         self.pending_name_ids = {}
         self.s = requests.Session()
 
@@ -80,20 +79,13 @@ class LighthouseApi:
         params = urllib.urlencode({ k: v for k,v in kwargs.iteritems() \
             if not re.match('.*\{' + k + '\}', path) })
         return self._get_url(path, **kwargs), params
-
-    @ensure_auth
-    def get(self, path, *args, **kwargs):
-        url, params = self._get_url_params(path, *args, **kwargs)
-        r = self.s.get(url, params=params, verify=False)
-        return self._parse_response(r)
-    
-    @ensure_auth
-    def find(self, path, *args, **kwargs):
-        if len(args) == 1 and len(kwargs) == 0:
-            id_name = re.sub(r'\{(.*)\}', r'\1', path.split('/')[-1])
-            kwargs = { id_name: args[0] }
-            args = []
-        elif len(args) == 0 and len(kwargs) > 1:
+        
+    def _apply_ids(self, path, **kwargs):
+        """
+        in case of kwargs withs ids for objects and/or for parents
+        it properly replaces the names
+        """
+        if len(kwargs) > 0:
             child_name = re.sub(r'\{(.*)\}', r'\1', path.split('/')[-1])
             if 'id' in kwargs:
                 kwargs[child_name] = kwargs['id']
@@ -107,6 +99,23 @@ class LighthouseApi:
                 elif parent_name in kwargs:
                     kwargs['id'] = kwargs[parent_name]
                     del kwargs[parent_name]
+        return kwargs
+
+    @ensure_auth
+    def get(self, path, *args, **kwargs):
+        kwargs = self._apply_ids(path, **kwargs)
+        url, params = self._get_url_params(path, *args, **kwargs)
+        r = self.s.get(url, params=params, verify=False)
+        return self._parse_response(r)
+    
+    @ensure_auth
+    def find(self, path, *args, **kwargs):
+        if len(args) == 1 and len(kwargs) == 0:
+            id_name = re.sub(r'\{(.*)\}', r'\1', path.split('/')[-1])
+            kwargs = { id_name: args[0] }
+            args = []
+        elif len(args) == 0:
+            kwargs = self._apply_ids(path, **kwargs)
         
         url, params = self._get_url_params(path, *args, **kwargs)
         r = self.s.get(url, params=params, verify=False)
@@ -114,6 +123,8 @@ class LighthouseApi:
 
     @ensure_auth
     def post(self, path, data={}, **kwargs):
+        kwargs = self._apply_ids(path, **kwargs)
+        
         if 'data' in kwargs and data == {}:
             data = kwargs['data']
             del kwargs['data']
@@ -123,6 +134,7 @@ class LighthouseApi:
 
     @ensure_auth
     def put(self, path, data, **kwargs):
+        kwargs = self._apply_ids(path, **kwargs)
         if 'data' in kwargs and data == {}:
             data = kwargs['data']
             del kwargs['data']
@@ -132,6 +144,7 @@ class LighthouseApi:
 
     @ensure_auth
     def delete(self, path, **kwargs):
+        kwargs = self._apply_ids(path, **kwargs)
         r = self.s.delete(self._get_url(path, **kwargs), verify=False)
         return self._parse_response(r)
 
