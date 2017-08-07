@@ -34,7 +34,7 @@ class LighthouseApi:
         self.url = os.environ.get('OGLH_API_URL')
         self.username = os.environ.get('OGLH_API_USER')
         self.password = os.environ.get('OGLH_API_PASS')
-
+        
         if not (self.url and self.username and self.password):
             raise RuntimeError("""
             Some of the required environment variables are not set, please refer
@@ -47,10 +47,13 @@ class LighthouseApi:
         self.pending_name_ids = {}
         self.s = requests.Session()
 
-        ramlfile = os.path.join(os.path.dirname(__file__), \
-            'og-rest-api-specification-v1.raml')
-        with open(ramlfile, 'r') as stream:
-            self.raml = yaml.load(stream)
+        #ramlfile = os.path.join(os.path.dirname(__file__), \
+        #    'og-rest-api-specification-v1.raml')
+        # just for now
+        r = self.s.get('http://ftp.opengear.com/download/api/lighthouse/og-rest-api-specification-v1.raml')
+        self.raml = yaml.load(re.sub(':\"',': \"',r.text))
+        #with open(ramlfile, 'r') as stream:
+        #    self.raml = yaml.load(stream)
 
     def _headers(self):
         headers = { 'Content-type' : 'application/json' }
