@@ -1,5 +1,6 @@
 # ignore cache files
 *.pyc
+__pycache__/*
 
 # ignore test files
 *test.py
