@@ -25,7 +25,7 @@ def ensure_auth(f):
         return result
     return wrapper
 
-class LighthouseApi:
+class LighthouseApiClient:
     """
     the basic API client, with methods for GET, POST, PUT, and DELETE
     """
@@ -34,7 +34,7 @@ class LighthouseApi:
         self.url = os.environ.get('OGLH_API_URL')
         self.username = os.environ.get('OGLH_API_USER')
         self.password = os.environ.get('OGLH_API_PASS')
-        
+
         if not (self.url and self.username and self.password):
             raise RuntimeError("""
             Some of the required environment variables are not set, please refer

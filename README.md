@@ -21,8 +21,8 @@ GET /system/global_enrollment_token HTTP/1.0
 would be performed through the client as:
 
 ```python
->>> from oglh_client import LighthouseApi
->>> api = LighthouseApi()
+>>> from oglhclient import LighthouseApiClient
+>>> api = LighthouseApiClient()
 >>> client = api.get_client()
 >>> client.system.global_enrollment_token.get()
 ```
