@@ -15,11 +15,11 @@ def ensure_auth(f):
     """
     def wrapper(*args, **kwargs):
         result = f(*args, **kwargs)
-        if type(result) is dict and 'error' in result and \
-                len(result['error']) > 0 and \
-                result['error'][0]['level'] == 1 and \
-                result['error'][0]['type'] == 7 and \
-                result['error'][0]['text'] == 'Invalid session ID':
+        if 'error' in result.__dict__.keys() and \
+                len(result.error) > 0 and \
+                result.error[0].level == 1 and \
+                result.error[0].type == 7 and \
+                result.error[0].text == 'Invalid session ID':
             args[0]._do_auth()
             return f(*args, **kwargs)
         return result
@@ -50,8 +50,8 @@ class LighthouseApiClient:
         try:
             ramlfile = os.path.join(os.path.dirname(__file__), \
                 'og-rest-api-specification-v1.raml')
-                with open(ramlfile, 'r') as stream:
-                    self.raml = yaml.load(stream)
+            with open(ramlfile, 'r') as stream:
+                self.raml = yaml.load(stream)
         except:
             r = self.s.get('http://ftp.opengear.com/download/api/lighthouse/og-rest-api-specification-v1.raml')
             self.raml = yaml.load(re.sub(':\"',': \"',r.text))
@@ -64,7 +64,6 @@ class LighthouseApiClient:
 
     def _do_auth(self):
         data = { 'username' : self.username, 'password' : self.password }
-        js = self.json_reponse
         body = self.post('/sessions', data=data)
 
         if 'error' in body.__dict__.keys():
@@ -82,8 +81,8 @@ class LighthouseApiClient:
     def _parse_response(self, response):
         try:
             #return json.loads(response.text)
-            return json.loads(response.text, \
-                object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
+            return json.loads(response.text, \
+                object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
         except ValueError:
             return response.text
 
