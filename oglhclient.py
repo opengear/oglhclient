@@ -47,13 +47,14 @@ class LighthouseApiClient:
         self.pending_name_ids = {}
         self.s = requests.Session()
 
-        #ramlfile = os.path.join(os.path.dirname(__file__), \
-        #    'og-rest-api-specification-v1.raml')
-        # just for now
-        r = self.s.get('http://ftp.opengear.com/download/api/lighthouse/og-rest-api-specification-v1.raml')
-        self.raml = yaml.load(re.sub(':\"',': \"',r.text))
-        #with open(ramlfile, 'r') as stream:
-        #    self.raml = yaml.load(stream)
+        try:
+            ramlfile = os.path.join(os.path.dirname(__file__), \
+                'og-rest-api-specification-v1.raml')
+                with open(ramlfile, 'r') as stream:
+                    self.raml = yaml.load(stream)
+        except:
+            r = self.s.get('http://ftp.opengear.com/download/api/lighthouse/og-rest-api-specification-v1.raml')
+            self.raml = yaml.load(re.sub(':\"',': \"',r.text))
 
     def _headers(self):
         headers = { 'Content-type' : 'application/json' }
@@ -63,8 +64,14 @@ class LighthouseApiClient:
 
     def _do_auth(self):
         data = { 'username' : self.username, 'password' : self.password }
+        js = self.json_reponse
         body = self.post('/sessions', data=data)
-        self.token = body['session']
+
+        if 'error' in body.__dict__.keys():
+            raise RuntimeError(body.error.text)
+
+        self.token = body.session
+
         if not self.token:
             raise RuntimeError('Auth failed')
         self.s.headers = self._headers()
@@ -74,7 +81,9 @@ class LighthouseApiClient:
 
     def _parse_response(self, response):
         try:
-            return json.loads(response.text)
+            #return json.loads(response.text)
+            return json.loads(response.text, \
+                object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
         except ValueError:
             return response.text
 
