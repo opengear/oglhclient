@@ -102,7 +102,7 @@ class LighthouseApiClient:
         in case of kwargs withs ids for objects and/or for parents
         it properly replaces the names
         """
-        if len(kwargs) > 0:
+        if len(kwargs) > 0 and not re.match('.*\{id\}$', path):
             child_name = re.sub(r'\{(.*)\}', r'\1', path.split('/')[-1])
             if 'id' in kwargs:
                 kwargs[child_name] = kwargs['id']

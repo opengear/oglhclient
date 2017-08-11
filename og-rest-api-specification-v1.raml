@@ -312,6 +312,9 @@ types:
         "enrollment":
           type: object
           properties:
+            "product":
+              type: string
+              required: false
             "call_home":
               type: "boolean"
               required: false
@@ -339,6 +342,20 @@ types:
             "auto_approve":
               type: "boolean"
               required: false
+            "connection_method":
+              type: string
+              required: false
+            "base_port":
+              type: integer
+              required: false
+            "port_count":
+              type: integer
+              required: false
+            "port_labels":
+              type: array
+              required: false
+              items:
+                type: string
 
   findNodeByIDResponse:
       description: "Lighthouse client node"
@@ -459,8 +476,9 @@ types:
   getPortByIdResponse:
       type: object
       properties:
-        "id": string
-        "label": string
+        "id":
+          required: true
+          type: string
         "mode":
           type: string
           enum: [
@@ -474,22 +492,67 @@ types:
             "powerman",
             "unknown"
           ]
-        "node_name": string
-        "port_csid": string
+        "port_csid":
+          type: string
+        "label":
+          type: string
         "proxied_ssh_url":
           type: string
           description: "URI to ssh to a port on a Lighthouse-enrolled node"
-          "example": "ssh://username:consoleserver:portnumber@lhip"
-        "webshell_enabled": "boolean"
-        "ssh_enabled": "boolean"
+          example: "ssh://username:consoleserver:portnumber@lhip"
+        "web_terminal_url":
+          type: string
+        "node_name":
+          type: string
+        "ssh_enabled":
+          type: boolean
+        "webshell_enabled":
+          type: boolean
+        "runtime_status":
+          type: object
+          properties :
+            "change_time":
+                type: integer
+            "change_delta":
+                type: integer
+            "action_status":
+                type: string
+                enum: [
+                  "in progress",
+                  "finished",
+                  "error",
+                  "unknown"
+                ]
+            "id" :
+                type: string
+            "action_type":
+                type: string
+                enum: [
+                  "registration",
+                  "enrollment",
+                  "none"
+                ]
+            "connection_status":
+              type: string
+              enum: [
+                "connected",
+                "pending",
+                "disconnected",
+                "unknown",
+                "never seen"
+              ]
+            "action_error_message":
+              type: string
+              required: false
 
   getPortByIdResponseList:
       type: object
       properties:
-        "nodes":
+        "ports":
           type: array
           items:
               type: getPortByIdResponse
+        meta: metaResponse
 
   registrationPackageResponse:
       type: object
@@ -504,6 +567,15 @@ types:
           type: string
         "ignore_date_header":
           type: "boolean"
+
+  getSearchResponse:
+      type: object
+      properties:
+        "search":
+          type: object
+          properties:
+            "id":
+              type: string
 
   searchFieldsResponse:
       type: object
@@ -543,7 +615,7 @@ types:
       description: "A list of tags and associated information"
       properties:
         meta: metaResponse
-        node_tags:
+        nodeTags:
           type: array
           items:
             type: object
@@ -743,7 +815,7 @@ types:
   connectionSummaryResponse:
     type: object
     properties:
-      connection_summary:
+      connectionSummary:
         type: array
         items:
           properties:
@@ -762,7 +834,7 @@ types:
   create_tag:
       type: object
       properties:
-        node_tag:
+        nodeTag:
           type: object
           properties:
             name:
@@ -809,7 +881,7 @@ types:
   put_tag:
       type: object
       properties:
-        node_tag:
+        nodeTag:
           type: object
           properties:
             name:
@@ -855,6 +927,74 @@ types:
         type: string
         required: false
       "total_pages": integer
+
+  firmwareUpgradeStatus:
+    type: object
+    properties:
+      system_firmware_upgrade_status:
+        type: object
+        properties:
+          state:
+            required: true
+            type: string
+            enum: [
+              "pending",
+              "running",
+              "error",
+              "finished"
+            ]
+          error_message:
+            required: false
+            type: string
+            enum: [
+              "format_error",
+              "download_error",
+              "version_error",
+              "runtime_error"
+            ]
+
+  entitlements:
+    type: object
+    properties:
+      id:
+        type: string
+        required: true
+      contact:
+        type: object
+        required: true
+        properties:
+          name:
+            type: string
+            required: true
+          email:
+            type: string
+            required: true
+          phone:
+            type: string
+            required: false
+      features:
+        type: object
+        required: true
+        properties:
+          maintenance:
+            type: integer
+            required: true
+          nodes:
+            type: integer
+            required: true
+          additional:
+            type: object
+            required: false
+
+  license:
+    type: object
+    properties:
+      id:
+        type: integer
+        required: false
+      raw:
+        type: string
+        required: true
 
 resourceTypes:
   base-type:
@@ -1053,7 +1193,7 @@ resourceTypes:
             which is the URL encoded json
 
 
-            {type:1,items:[{"datatype":4,type:3,"oper":1,"fieldname": "config:name","value": "test"}]}
+            {type:1,items:[{"datatype":4,type:3,"oper":1,"fieldname":"config:name","value":"test"}]}
           type: string
           required: false
           displayName: 'json'
@@ -1167,7 +1307,7 @@ resourceTypes:
       application/json:
         type: credentials
         example:
-          {"username": "root","password": "default"}
+          {"username":"root","password":"default"}
     responses:
       400:
         description: Failed to initiate session creation due to error in post body.
@@ -1498,24 +1638,46 @@ resourceTypes:
             {
               "enrollment":
               {
+                "product": "opengear",
                 "call_home": true,
-                "token": "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456",
-                "bundle": "console-servers",
-                "hostname": "acm7004-5"
+                "token":"ABCDEFGHIJKLMNOPQRSTUVWXYZ123456",
+                "bundle":"console-servers",
+                "hostname":"acm7004-5"
               }
             }
           example2:
             {
               "enrollment":
               {
+                "product": "opengear",
                 "call_home": false,
-                "name": "bne-7004-backup",
-                "address": "1.2.3.4",
-                "username": "root",
-                "password": "default",
+                "name":"bne-7004-backup",
+                "address":"1.2.3.4",
+                "username":"root",
+                "password":"default",
                 "auto_approve":true
               }
             }
+          example3:
+            {
+              "enrollment":
+              {
+                "product": "generic",
+                "name":"bne-7004-backup",
+                "address":"1.2.3.4",
+                "connection_method": "ssh",
+                "username":"root",
+                "password":"default",
+                "auto_approve":true,
+                "base_port": 2100,
+                "port_count": 2,
+                "port_labels": [
+                  "Port 1",
+                  "Port 2"
+                ]
+              }
+            }
+
     displayName: enrollNewNode
     description: >
       Enqueue a new node for enrollment. This can either be a direct (Lighthouse-driven) enrollment, or a enrollment request by a new node ("call-home").
@@ -1766,7 +1928,7 @@ resourceTypes:
     type: base-type
     uriParameters:
       id:
-        description: ID of node to fetch
+        description: ID of the node.
         required: true
         displayName: id
         example: nodes-1
@@ -1895,6 +2057,11 @@ resourceTypes:
                     "firmware_version": "4.0.0"
                   }
                 }
+    delete:
+      description: Delete (unenroll) a node.
+      responses:
+        204:
+          description: The node was deleted successfully.
 
     # Enrollment.get_registration_package
     /registration_package:
@@ -1984,7 +2151,7 @@ resourceTypes:
               {
                 "tag": {
                   name: "Location",
-                  "value": "New York"
+                  "value":"New York"
                 }
               }
         responses:
@@ -2283,7 +2450,103 @@ resourceTypes:
               type: getPortByIdResponseList
 
 /ports:
-  description: Used for working with port information.
+  type: searchable-type
+  description: >
+    Used for working with port information.
+  get:
+    displayName: getPorts
+    description: >
+      Gets ports attached to this lighthouse instance.
+
+
+      Any number of search query parameters can be provided to perform an
+      ANDed search on the ports.
+
+
+      The standard ember-data pagination fields {per_page} and {page} apply
+      to this list.
+
+
+      {per_page} and {page} are optional but both are to be supplied if pages
+      are requested.
+
+    queryParameters:
+      per_page:
+        description: Number of ports expected per page
+        type: integer
+        required: false
+        displayName: per_page
+        default: 100000
+      page:
+        description: The page to return (indexed from 1)
+        type: integer
+        required: false
+        displayName: page
+        default: 1
+      searchparameters:
+        description: One or more search fields
+        type: string
+        required: false
+        displayName: 'search parameters*'
+    responses:
+      200:
+        description: The array of ports, either a full array or as requested by parameters
+        body:
+          application/json:
+            type: getPortByIdResponseList
+            example:
+              {
+                "ports": [{
+                  "proxied_ssh_url": "ssh:\/\/user:node1:port1@192.168.0.1",
+                  "label": "Port 01",
+                  "id": "nodes_ports-1",
+                  "node_name": "node1",
+                  "webshell_enabled": false,
+                  "web_terminal_url": "manage\/nodes\/ports\/terminal\/node1\/port1?name=Port_01",
+                  "port_csid": "port1",
+                  "mode": "consoleServer",
+                  "runtime_status": {
+                    "change_delta": 14,
+                    "change_time": 1498603761,
+                    "action_status": "in progress",
+                    "id": "nodes-12",
+                    "action_type": "none",
+                    "connection_status": "connected"
+                  },
+                  "ssh_enabled": true
+                }],
+                "meta": {
+                  "searchId": "{4648d82-5b8a-11e7-a476-773c6172a34}",
+                  "total_pages": 5
+                }
+              }
+      400:
+        description: Invalid request, missing or incorrect page/per_page
+        body:
+          application/json:
+            type: error
+            example:
+              {
+                "error": [
+                  {
+                    type: 4,
+                    "code": 39,
+                    "text": "Invalid request body",
+                    "args": {},
+                    "level": 1
+                  }
+                ]
+              }
+      404:
+        description: Invalid request, Incomplete data, Port not found, Failure during retrieval of ports
+        body:
+          application/json:
+            type: error
+      500:
+        description: Failed to read ports.
+        body:
+          application/json:
+            type: error
   /{id}:
     type: base-type
     get:
@@ -2294,6 +2557,212 @@ resourceTypes:
           body:
             application/json:
               type: getPortByIdResponse
+
+/search:
+  type: base-type
+  description: >
+    Used to perform searches on nodes and ports on the system.
+  /nodes:
+    type: base-type
+    description: >
+      Creating a search ID for nodes from the given query parameters.
+    get:
+      displayName: getSearchId
+      description: >
+        Gets a search ID for searching nodes attached to this lighthouse instance.
+
+        Any number of search query parameters can be provided to perform an
+        ANDed search on the nodes. The parameters possible should be retrieved
+        with GET /nodes/fields. The list provided is dynamic.
+      queryParameters:
+        json:
+          description: >
+            One or more json URL encoded search parameters.
+
+            Example
+            %7B%22type%22%3A1%2C%22items%22%3A%5B%7B%22datatype%22%3A4
+            %2C%22type%22%3A3%2C%22oper%22%3A1%2C%22fieldname%22%3A%22
+            config%3Aname%22%2C%22value%22%3A%22test%22%7D%5D%7D
+
+            which is the URL encoded json
+
+            {type:1,items:[{"datatype":4,type:3,"oper":1,"fieldname":"config:name","value":"test"}]}
+          type: string
+          required: false
+          displayName: 'json'
+        jb64:
+          description: >
+            one or more base64 encoded json search parameters.
+
+            Ensure that any trailing = padding is URL encoded to %3D
+          type: string
+          required: false
+          displayName: 'jb64'
+        searchparameters:
+          description: >
+            One or more search fields as provided by /nodes/fields.
+
+            For example,
+
+            config:name=\*test\*, will search for nodes with names containing
+            test, or
+
+            config:status=!Enrolled will search for
+            nodes which are not enrolled.
+
+            Allowed operators are: =value, >value, >=value, <value, <=value,
+            !value (not), \*value (ends in), value\* (starts with), \*value\*
+            (contains). Reserved characters to be URl encoded, e.g. = as %3D
+          type: string
+          required: false
+          displayName: 'search parameters*'
+        operator:
+          description: >
+            Operator applied between all searchparameters, json and jb64
+            query parameters.
+
+            AND or OR
+
+          default: AND
+          required: false
+      responses:
+        200:
+          description: The search ID, as defined by given parameters
+          body:
+            application/json:
+              type: getSearchResponse
+              example:
+                {
+                  "search":
+                    {
+                      "id": "{268daae-5555-11e7-8af6-b7116753aa5}",
+                    },
+                }
+        400:
+          description: Invalid request, missing or incorrect search parameters.
+          body:
+            application/json:
+              type: error
+              example:
+                {
+                  "error": [
+                    {
+                      type: 4,
+                      "code": 39,
+                      "text": "Invalid request body",
+                      "args": {},
+                      "level": 1
+                    }
+                  ]
+                }
+        404:
+          description: Invalid request, Incomplete data.
+          body:
+            application/json:
+              type: error
+        500:
+          description: Failed to retrieve a search ID.
+          body:
+            application/json:
+              type: error
+  /ports:
+    type: base-type
+    description: >
+      Creating a search ID for ports from the given query parameters.
+    get:
+      displayName: getSearchId
+      description: >
+        Gets a search ID for searching ports attached to this lighthouse instance.
+
+        Any number of search query parameters can be provided to perform an
+        ANDed search on the ports. The list provided is dynamic.
+      queryParameters:
+        json:
+          description: >
+            One or more json URL encoded search parameters.
+
+            Example
+            %7B%22type%22%3A1%2C%22items%22%3A%5B%7B%22datatype%22%3A4
+            %2C%22type%22%3A3%2C%22oper%22%3A1%2C%22fieldname%22%3A%22
+            config%3Aname%22%2C%22value%22%3A%22test%22%7D%5D%7D
+
+            which is the URL encoded json
+
+            {type:1,items:[{"datatype":4,type:3,"oper":1,"fieldname":"config:label","value":"test"}]}
+          type: string
+          required: false
+          displayName: 'json'
+        jb64:
+          description: >
+            one or more base64 encoded json search parameters.
+
+            Ensure that any trailing = padding is URL encoded to %3D
+          type: string
+          required: false
+          displayName: 'jb64'
+        searchparameters:
+          description: >
+            One or more search fields.
+
+            For example,
+
+            config:label=\*test\*, will search for ports with labels containing test.
+
+            Allowed operators are: =value, >value, >=value, <value, <=value,
+            !value (not), \*value (ends in), value\* (starts with), \*value\*
+            (contains). Reserved characters to be URl encoded, e.g. = as %3D
+          type: string
+          required: false
+          displayName: 'search parameters*'
+        operator:
+          description: >
+            Operator applied between all searchparameters, json and jb64
+            query parameters.
+
+            AND or OR
+
+          default: AND
+          required: false
+      responses:
+        200:
+          description: The search ID, as defined by given parameters
+          body:
+            application/json:
+              type: getSearchResponse
+              example:
+                {
+                  "search":
+                    {
+                      "id": "{268daae-5555-11e7-8af6-b7116753aa5}",
+                    },
+                }
+        400:
+          description: Invalid request, missing or incorrect search parameters.
+          body:
+            application/json:
+              type: error
+              example:
+                {
+                  "error": [
+                    {
+                      type: 4,
+                      "code": 39,
+                      "text": "Invalid request body",
+                      "args": {},
+                      "level": 1
+                    }
+                  ]
+                }
+        404:
+          description: Invalid request, Incomplete data.
+          body:
+            application/json:
+              type: error
+        500:
+          description: Failed to retrieve a search ID.
+          body:
+            application/json:
+              type: error
 
 /services:
   description: >
@@ -2325,7 +2794,7 @@ resourceTypes:
                     "locality": "Toowong",
                     "org_unit": "OU",
                     "email": "bob@bob.com",
-                    "organization": "Internet Widgits Pty Ltd",
+                    "organization":"Internet Widgits Pty Ltd",
                     "key_length":2048,
                     "cert" : "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----",
                     "csr" : {
@@ -2341,7 +2810,7 @@ resourceTypes:
                   }
                 }
     put:
-      description: Update HTTPS details. A certificate matching the CSR can be uploading by setting the https.cert field, a CSR can be cancelled by sending through no https.csr body, and a new csr can be created by sending through a https.csr body with a csr value of "new".
+      description: Update HTTPS details. A certificate matching the CSR can be uploaded by setting the https.cert field, a CSR can be cancelled by sending through no https.csr body, and a new csr can be created by sending through a https.csr body with a csr value of "new".
       body:
         application/json:
           example:
@@ -2377,7 +2846,7 @@ resourceTypes:
                     "locality": "Toowong",
                     "org_unit": "OU",
                     "email": "bob@bob.com",
-                    "organization": "Internet Widgits Pty Ltd",
+                    "organization":"Internet Widgits Pty Ltd",
                     "key_length":2048,
                     "cert" : "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----",
                     "csr" : {
@@ -2402,7 +2871,7 @@ resourceTypes:
                     {
                       type: 2,
                       "code": 14,
-                      "text": " String did not conform to the expected format.",
+                      "text":" String did not conform to the expected format.",
                       "args": {
                         "uuid": "root-1-services_https_csr_email"
                       },
@@ -2427,7 +2896,7 @@ resourceTypes:
                     {
                       type: 2,
                       "code": 14,
-                      "text": " String did not conform to the expected format.",
+                      "text":" String did not conform to the expected format.",
                       "args": {
                         "uuid": "root-1-services_https_csr_email"
                       },
@@ -2580,7 +3049,7 @@ resourceTypes:
               type: consoleGatewayResponse
               example:
                 {
-                  "console_gateway": { "ssh_url_delimiter": ": " }
+                  "console_gateway": { "ssh_url_delimiter": ":" }
                 }
     put:
       description: Update config parameters related to the Console Gateway service.
@@ -2588,7 +3057,7 @@ resourceTypes:
         application/json:
           example:
                 {
-                  "console_gateway": { "ssh_url_delimiter": ": " }
+                  "console_gateway": { "ssh_url_delimiter": ":" }
                 }
       responses:
         200:
@@ -2597,7 +3066,7 @@ resourceTypes:
               type: consoleGatewayResponse
               example:
                 {
-                  "console_gateway": { "ssh_url_delimiter": ": " }
+                  "console_gateway": { "ssh_url_delimiter": ":" }
                 }
 
 
@@ -2636,7 +3105,7 @@ resourceTypes:
               type: getTagsListResponse
               example:
                 {
-                  "node_tags": [
+                  "nodeTags": [
                     {
                       "id": "tags_node_tags-1",
                       name: "myTag",
@@ -2708,7 +3177,7 @@ resourceTypes:
           type: create_tag
           example:
             {
-              "node_tag": {
+              "nodeTag": {
                 name: "Location",
                 values: [
                   {
@@ -2727,7 +3196,7 @@ resourceTypes:
             application/json:
               example:
                 {
-                  "node_tag": {
+                  "nodeTag": {
                     "id": "tags_node_tags-50",
                     name: "Location",
                     values: [
@@ -2757,7 +3226,7 @@ resourceTypes:
             type: put_tag
             example:
               {
-                "node_tag": {
+                "nodeTag": {
                   name: "Location",
                   values: [
                     {
@@ -2980,47 +3449,51 @@ resourceTypes:
 
             Attempted to change unknown fields.
 
-/system/hostname:
-  type: base-type
-  description:
-    Retrieve or change the Lighthouse system's hostname.
-  get:
-    description: Get the Lighthouse hostname.
-    responses:
-      200:
-        body:
-          application/json:
-            type: systemHostname
-            example:
-              {
-                system_hostname: {
-                  hostname: "Lighthouse"
-                  }
-              }
-  put:
-    description: Update the Lighthouse hostname.
-    body:
-      application/json:
-        type: systemHostname
-        example:
-          {
-            system_hostname: {
-              hostname: "Lighthouse"
-              }
-          }
-    responses:
-      200:
-        body:
-          application/json:
-            type: systemHostname
-            example:
-              { system_hostname: { hostname: "Lighthouse" } }
+/system:
+  description: >
+    System endpoints are related to configuring and accessing information about
+    the Lighthouse system itself.
+  /hostname:
+    type: base-type
+    description:
+      Retrieve or change the Lighthouse system's hostname.
+    get:
+      description: Get the Lighthouse hostname.
+      responses:
+        200:
+          body:
+            application/json:
+              type: systemHostname
+              example:
+                {
+                  system_hostname: {
+                    hostname: "Lighthouse"
+                    }
+                }
+    put:
+      description: Update the Lighthouse hostname.
+      body:
+        application/json:
+          type: systemHostname
+          example:
+            {
+              system_hostname: {
+                hostname: "Lighthouse"
+                }
+            }
+      responses:
+        200:
+          body:
+            application/json:
+              type: systemHostname
+              example:
+                { system_hostname: { hostname: "Lighthouse" } }
 
-/system/webui_session_timeout:
+  /webui_session_timeout:
     type: base-type
     description: Retrieve or change the Lighthouse session timeout.
     get:
-      description: Retrieve the session timeout.
+      description: Retrieve the session timeout (in minutes).
       responses:
         200:
           body:
@@ -3029,7 +3502,7 @@ resourceTypes:
               example:
                 { system_webui_session_timeout: { timeout: 20 } }
     put:
-      description: Update the session timeout.
+      description: Update the session timeout (in minutes).
       body:
         application/json:
           type: systemWebui
@@ -3044,164 +3517,351 @@ resourceTypes:
               example:
                 { system_webui_session_timeout: { timeout: 20 } }
 
-/system/global_enrollment_token:
-  type: base-type
-  description:
-    Retrieve or update the Lighthouse server's global enrollment token.
-  get:
-    description: Retrieve the Lighthouse's global enrollment token.
-    responses:
-      200:
-        body:
-          application/json:
-            type: systemGlobalEnrollmentToken
-            example:
-              { system_global_enrollment_token: { token: "mySomewhatSecret" } }
-  put:
-    description: Update the Lighthouse's global enrollment token.
-    body:
-      application/json:
-        type: systemGlobalEnrollmentToken
-        example:
-          { system_global_enrollment_token: { token: "mySomewhatSecret" } }
-    responses:
-      200:
-        body:
-          application/json:
-            type: systemGlobalEnrollmentToken
-            example:
-              { system_global_enrollment_token: { token: "mySomewhatSecret" } }
-
-/system/manifest_link:
-  type: base-type
-  description: Retrieve a link to the global enrollment manifest file.
-  get:
+  /global_enrollment_token:
+    type: base-type
     description:
-      Returns the url for downloading the manifest file in plaintext.
-    responses:
-      200:
-        body:
-          application/json:
-            type: manifestLink
-            example:
-              {
-                system_global_manifest_link: {
-                  url: "http://192.168.1.1/manifest.txt"
-                }
-              }
+      Retrieve or update the Lighthouse server's global enrollment token.
+    get:
+      description: Retrieve the Lighthouse's global enrollment token.
+      responses:
+        200:
+          body:
+            application/json:
+              type: systemGlobalEnrollmentToken
+              example:
+                { system_global_enrollment_token: { token: "mySomewhatSecret" } }
+    put:
+      description: Update the Lighthouse's global enrollment token.
+      body:
+        application/json:
+          type: systemGlobalEnrollmentToken
+          example:
+            { system_global_enrollment_token: { token: "mySomewhatSecret" } }
+      responses:
+        200:
+          body:
+            application/json:
+              type: systemGlobalEnrollmentToken
+              example:
+                { system_global_enrollment_token: { token: "mySomewhatSecret" } }
 
-/system/timezone:
-  type: base-type
-  description:
-    Retrieve and update the system's timezone.
-  get:
-    description: Retrieves the system timezone.
-    responses:
-      200:
-        body:
-          application/json:
-            type: systemTimezone
-            example:
-              { system_timezone: { timezone: "Australia/Brisbane" } }
-  put:
-    description: Update the system timezone.
-    body:
-      application/json:
-        type: systemTimezone
-        example:
-          { system_timezone: { timezone: "Australia/Brisbane" } }
-    responses:
-      200:
-        body:
-          application/json:
-            type: systemTimezone
-            example:
-              { system_timezone: { timezone: "Australia/Brisbane" } }
-
-/system/external_address:
-  type: base-type
-  description:
-    Retrieve and update the Lighthouse system's externally reachable network address.
-  get:
-    description: Retrieve the Lighthouse external address.
-    responses:
-      200:
-        body:
-          application/json:
-            type: systemAddress
-            example:
-              {
-                system_external_address: {
-                  external_address: " ",
-                  os_default_external_address: " "
+  /manifest_link:
+    type: base-type
+    description: Retrieve a link to the global enrollment manifest file.
+    get:
+      description:
+        Returns the url for downloading the manifest file in plaintext.
+      responses:
+        200:
+          body:
+            application/json:
+              type: manifestLink
+              example:
+                {
+                  system_global_manifest_link: {
+                    url: "http://192.168.1.1/manifest.txt"
                   }
-              }
-  put:
-    description: Update the Lighthouse external address.
-    body:
-      application/json:
-        type: systemAddress
-        example:
-          {
-            system_external_address: {
-              external_address: " ",
-              os_default_external_address: " "
-              }
-          }
-    responses:
-      200:
-        body:
-          application/json:
-            type: systemAddress
-            example:
-              {
+                }
+
+  /timezone:
+    type: base-type
+    description:
+      Retrieve and update the system's timezone.
+    get:
+      description: Retrieves the system timezone.
+      responses:
+        200:
+          body:
+            application/json:
+              type: systemTimezone
+              example:
+                { system_timezone: { timezone: "Australia/Brisbane" } }
+    put:
+      description: Update the system timezone.
+      body:
+        application/json:
+          type: systemTimezone
+          example:
+            { system_timezone: { timezone: "Australia/Brisbane" } }
+      responses:
+        200:
+          body:
+            application/json:
+              type: systemTimezone
+              example:
+                { system_timezone: { timezone: "Australia/Brisbane" } }
+
+  /external_address:
+    type: base-type
+    description:
+      Retrieve and update the Lighthouse system's externally reachable network address.
+    get:
+      description: Retrieve the Lighthouse external address.
+      responses:
+        200:
+          body:
+            application/json:
+              type: systemAddress
+              example:
+                {
+                  system_external_address: {
+                    external_address: " ",
+                    os_default_external_address: " "
+                    }
+                }
+    put:
+      description: Update the Lighthouse external address.
+      body:
+        application/json:
+          type: systemAddress
+          example:
+            {
               system_external_address: {
                 external_address: " ",
                 os_default_external_address: " "
                 }
-              }
+            }
+      responses:
+        200:
+          body:
+            application/json:
+              type: systemAddress
+              example:
+                {
+                system_external_address: {
+                  external_address: " ",
+                  os_default_external_address: " "
+                  }
+                }
 
-/system/time:
-  type: base-type
-  description:
-    Retrieve and update the Lighthouse server's time.
-  get:
-    description: Retrieve the Lighthouse current time.
-    responses:
-      200:
-        body:
-          application/json:
-            type: systemTime
-            example:
-              { time: { time: "16:22 Sep 23, 2016" } }
-  put:
-    description: Update the Lighthouse current time.
-    body:
-      application/json:
-        type: systemTime
-        example:
-          { time: { time: "16:22 Sep 23, 2016" } }
-    responses:
-      200:
-        body:
-          application/json:
-            type: systemTime
-            example:
-              { time: { time: "16:22 Sep 23, 2016" } }
+  /time:
+    type: base-type
+    description:
+      Retrieve and update the Lighthouse server's time.
+    get:
+      description: Retrieve the Lighthouse current time.
+      responses:
+        200:
+          body:
+            application/json:
+              type: systemTime
+              example:
+                { time: { time: "16:22 Sep 23, 2016" } }
+    put:
+      description: Update the Lighthouse current time.
+      body:
+        application/json:
+          type: systemTime
+          example:
+            { time: { time: "16:22 Sep 23, 2016" } }
+      responses:
+        200:
+          body:
+            application/json:
+              type: systemTime
+              example:
+                { time: { time: "16:22 Sep 23, 2016" } }
 
-/system/config:
-  type: base-type
-  # System.reset
-  delete:
-    description: >
-      Delete the configuration effectively performing a system reset.
-      The Lighthouse host will reset to factory mode and reboot.
-      The user will need to access the device on the default IP address or
-      via the console.
-    responses:
-      200:
-        description: >
-          The factory reset process was started successfuly.
+  /config:
+    type: base-type
+    # System.reset
+    delete:
+      description: >
+        Delete the configuration effectively performing a system reset.
+        The Lighthouse host will reset to factory settings and reboot.
+        The user will need to access the device via the console to set the
+        root password before the network will be available.
+      responses:
+        200:
+          description: >
+            The factory reset process was started successfuly.
+
+  /firmware_upgrade:
+    type: base-type
+    # Firmware.postFirmwareUpgrade
+    post:
+      description: >
+        Upgrade the system firmware either by uploading a file or providing a url
+        to download the file from. This endpoint will always return success if the
+        firmware upgrade job was started - it occurs in the background and the state
+        of which should be retrieved from the GET /system/firmware_upgrade_status
+        endpoint.
+        At least 'file' or 'firmware_url' are required.
+      body:
+        multipart/form-data:
+          properties:
+            file:
+              description: The file to be uploaded.
+              required: false
+              type: file
+            firmware_url:
+              description: A url for the file to download.
+              required: false
+              type: string
+            firmware_options:
+              description: Options for the firmware upgrade tool.
+              required: false
+              type: string
+      responses:
+        200:
+          description: The firmware upgrade process was started.
+          body:
+            application/json:
+              type: firmwareUpgradeStatus
+              example: |
+                {
+                  "system_firmware_upgrade_status":
+                    {
+                      "state": "running"
+                    }
+                }
+
+  /firmware_upgrade_status:
+    # Firmware.getFirmwareUpgradeStatus
+    type: base-type
+    get:
+      description: Retrieve the status of the most recent firmware upgrade job.
+      responses:
+        200:
+          description: The factory reset process was started successfuly.
+          body:
+            application/json:
+              type: firmwareUpgradeStatus
+              example: |
+                {
+                  "system_firmware_upgrade_status":
+                    {
+                      "state": "error",
+                      "error_message": "download_error"
+                    }
+                }
+
+  /entitlements:
+    description:
+      Retrieve entitlement information for the Lighthouse based on the licenses applied.
+    type: base-type
+    get:
+      description: Retrieve a list of entitlements.
+      responses:
+        200:
+          description:
+            A JSON object containing entitlements information.
+          body:
+            application/json:
+              type: object
+              properties:
+                entitlements:
+                  type: array
+                  description: A list of entitlements.
+                  items:
+                    schema: entitlements
+              example:
+                {
+                  "entitlements": [
+                    {
+                      "id": "SKU1",
+                      "contact": {
+                        "name": "Jenny Bloggs",
+                        "email": "jennyb@bloggs.com"
+                      },
+                      "features": {
+                        "maintenance": 1546214400,
+                        "nodes": 20
+                      }
+                    },
+                    {
+                      "id": "SKU2",
+                      "contact": {
+                        "name": "Joe Bloggs",
+                        "email": "joeb@bloggs.com"
+                      },
+                      "features": {
+                        "maintenance": 1546214400,
+                        "nodes": 1578
+                      }
+                    }
+                  ]
+                }
+
+  /licenses:
+    description:
+      Create and view licenses applied to the Lighthouse system.
+    type: base-type
+    get:
+      description: Retrieve a list of license strings.
+      responses:
+        200:
+          description:
+            A JSON object containing raw license strings information.
+          body:
+            application/json:
+              type: object
+              properties:
+                licenses:
+                  type: array
+                  items:
+                    schema: license
+              example:
+                {
+                  "licenses": [
+                    {
+                      "id": 1,
+                      "raw": "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im1pY2hhZWxmQGZpdHp5c2l0ZS5jb20iLCJzdWIiOiJ..."
+                    },
+                    {
+                      "id": 2,
+                      "raw": "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im1pY2hhZWxmQGZpdHp5c2l0ZS5jb20iLCJzdWIiOiJ..."
+                    }
+                  ]
+                }
+
+    post:
+      description: Apply a list of licenses.
+      body:
+        application/json:
+          type: object
+          properties:
+            licenses:
+              type: array
+              items:
+                schema: license
+          example:
+            {
+              "licenses": [
+                {
+                  "raw": "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im1pY2hhZWxmQGZpdHp5c2l0ZS5jb20iLCJzdWIiOiJ..."
+                },
+                {
+                  "raw": "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im1pY2hhZWxmQGZpdHp5c2l0ZS5jb20iLCJzdWIiOiJ..."
+                }
+              ]
+            }
+      responses:
+        201:
+          description:
+            A JSON object containing the raw licenses that were just applied.
+          body:
+            application/json:
+              type: object
+              properties:
+                licenses:
+                  type: array
+                  items:
+                    schema: license
+              example:
+                {
+                  "licenses": [
+                    {
+                      "id": 1,
+                      "raw": "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im1pY2hhZWxmQGZpdHp5c2l0ZS5jb20iLCJzdWIiOiJ..."
+                    },
+                    {
+                      "id": 2,
+                      "raw": "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im1pY2hhZWxmQGZpdHp5c2l0ZS5jb20iLCJzdWIiOiJ..."
+                    }
+                  ]
+                }
+
 
 # Stats.node_connection_summary
 /stats:
@@ -3220,7 +3880,7 @@ resourceTypes:
                 type: connectionSummaryResponse
                 example:
                   {
-                    "connection_summary": [
+                    "connectionSummary": [
                       {
                         "status": "connected",
                         "count": 11
@@ -3505,8 +4165,8 @@ resourceTypes:
                 "token": "ABCD1234567",
                 "automatic_tags": [
                   {
-                    "name": "Location",
-                    "value": "Brisbane"
+                    "name":"Location",
+                    "value":"Brisbane"
                   }
                 ]
                }
@@ -3665,13 +4325,13 @@ resourceTypes:
             {
               "bundle":
                 {
-                  "name": "PrimaryBundle",
+                  "name":"PrimaryBundle",
                   "auto_approve":true,
-                  "token": "BCDEFGHIJKLMNOPQRSTUVWXYZ123456",
+                  "token":"BCDEFGHIJKLMNOPQRSTUVWXYZ123456",
                   "automatic_tags":[
                     {
-                      "name": "Location",
-                      "value": "Brisbane",
+                      "name":"Location",
+                      "value":"Brisbane",
                     }
                   ]
                 }
@@ -3688,7 +4348,7 @@ resourceTypes:
                     {
                       "name": "PrimaryBundle",
                       "auto_approve": true,
-                      "id": "enrollment_bundles-3",
+                      "id":"enrollment_bundles-3",
                       "automatic_tags": [
                         {
                           "id": "enrollment_bundles_automatic_tags-4",
@@ -3755,8 +4415,8 @@ resourceTypes:
             example:
               {
                 "tag": {
-                  name: "Location",
-                  "value": "New York"
+                  name:"Location",
+                  "value":"New York"
                 }
               }
         responses:
@@ -4398,7 +5058,7 @@ resourceTypes:
                 "groupname": "netgrp2",
                 "description": "my new description",
                 "mode": "global",
-                "global_roles": "NodeUser"
+                "global_roles":"NodeUser"
               }
             }
       responses:
@@ -4463,3 +5123,4 @@ resourceTypes:
                     }
                   ]
                 }
+
