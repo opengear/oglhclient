@@ -3,6 +3,10 @@
 import os, requests, json, urllib, re, yaml
 from collections import namedtuple
 from functools import wraps, partial
+from future.standard_library import install_aliases
+install_aliases()
+
+from urllib.parse import urlparse, urlencode
 
 def ensure_auth(f):
     """
@@ -12,7 +16,8 @@ def ensure_auth(f):
     """
     def wrapper(*args, **kwargs):
         result = f(*args, **kwargs)
-        if 'error' in result.__dict__.keys() and \
+
+        if 'error' in result._asdict() and \
                 len(result.error) > 0 and \
                 result.error[0].level == 1 and \
                 result.error[0].type == 7 and \
@@ -77,7 +82,7 @@ class LighthouseApiClient:
         data = { 'username' : self.username, 'password' : self.password }
         body = self.post('/sessions', data=data)
 
-        if 'error' in body.__dict__.keys():
+        if 'error' in body._asdict():
             raise RuntimeError(body.error.text)
 
         self.token = body.session
@@ -104,7 +109,7 @@ class LighthouseApiClient:
         for a in args:
             if type(a) is dict:
                 kwargs.update(a)
-        params = urllib.urlencode({ k: v for k,v in kwargs.iteritems() \
+        params = urllib.parse.urlencode({ k: v for k,v in kwargs.items() \
             if not re.match('.*\{' + k + '\}', path) })
         return self._get_url(path, **kwargs), params
 
