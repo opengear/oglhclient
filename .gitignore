@@ -11,3 +11,6 @@ __pycache__/*
 
 # ignore log files
 *.log
+
+# ignore egg info files
+oglhclient.egg-info/*
