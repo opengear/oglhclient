@@ -1,11 +1,8 @@
 #!/usr/bin/python
 
-import os, sys, time, requests, json, urllib, re, textwrap, yaml, urlparse
-from requests.packages.urllib3.util.retry import Retry
-from requests.adapters import HTTPAdapter
+import os, requests, json, urllib, re, yaml
 from collections import namedtuple
 from functools import wraps, partial
-from slackclient import SlackClient
 
 def ensure_auth(f):
     """
@@ -51,10 +48,24 @@ class LighthouseApiClient:
             ramlfile = os.path.join(os.path.dirname(__file__), \
                 'og-rest-api-specification-v1.raml')
             with open(ramlfile, 'r') as stream:
-                self.raml = yaml.load(stream)
-        except:
+                self.raml = yaml.load(re.sub('\\\/','/',re.sub(':\"',': \"',stream.read())))
+        except Exception as e:
             r = self.s.get('http://ftp.opengear.com/download/api/lighthouse/og-rest-api-specification-v1.raml')
-            self.raml = yaml.load(re.sub(':\"',': \"',r.text))
+            self.raml = yaml.load(re.sub('\\\/','/',re.sub(':\"',': \"',r.text)))
+        self.raml = self._fix_raml(self.raml)
+
+    def _fix_raml(self, raml):
+        top_paths = [p for p in raml.keys() if re.match('^\/', p)]
+        for p in top_paths:
+            path_parts = p.split('/')
+            if len(path_parts) == 3 and ('/' + path_parts[1]) in top_paths:
+                raml['/' + path_parts[1]].update({
+                    '/' + path_parts[2]: raml[p]
+                })
+                del raml[p]
+            else:
+                raml[p] = self._fix_raml(raml[p])
+        return raml
 
     def _headers(self):
         headers = { 'Content-type' : 'application/json' }
@@ -181,7 +192,10 @@ class LighthouseApiClient:
         for k in actions:
             if k == 'get' and re.match('.*(I|i)d\}$', path):
                 kwargs['find'] = partial(self.find, path)
-            elif k == 'get' and len([l for l in top_children if re.match('\{.+\}', l)]) > 0:
+            elif k == 'get' and \
+                (len([l for l in top_children if re.match('\{.+\}', l)]) > 0 \
+                or ('description' in node['get'] and \
+                re.match('.*(A|a|(T|t)he)\ (l|L)ist\ of', node['get']['description']))):
                 kwargs['list'] = partial(self.get, path)
             elif k == 'get':
                 kwargs['get'] = partial(self.get, path)
@@ -214,5 +228,5 @@ class LighthouseApiClient:
             SubClient = namedtuple('SubClient', ' '.join(subargs.keys()))
             kwargs[k] = SubClient(**subargs)
 
-        SynClient = namedtuple('SynClient', ' '.join(kwargs.keys()))
+        SynClient = namedtuple('OgLhClient', ' '.join(kwargs.keys()))
         return SynClient(**kwargs)
