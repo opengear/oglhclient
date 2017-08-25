@@ -40,7 +40,7 @@ class LighthouseApiClient:
         if not (self.url and self.username and self.password):
             raise RuntimeError("""
             Some of the required environment variables are not set, please refer
-            to the documentation: https://github.com/thiagolcmelo/oglhclient
+            to the documentation: https://github.com/opengeardev/oglhclient
             """)
 
         requests.packages.urllib3.disable_warnings()
@@ -60,6 +60,18 @@ class LighthouseApiClient:
         self.raml = self._fix_raml(self.raml)
 
     def _fix_raml(self, raml):
+        """ it fixes some objects that are split like:
+        
+        /system
+        
+        /system/time
+        
+        instead of:
+        
+        /system
+            /time
+        it is helpefull for parsing the raml file
+        """
         top_paths = [p for p in raml.keys() if re.match('^\/', p)]
         for p in top_paths:
             path_parts = p.split('/')
