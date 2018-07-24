@@ -1,6 +1,6 @@
 # Lighthouse API client
 
-The client is tightly tied to the RESTful API [RAML specification](http://ftp.opengear.com/download/api/lighthouse/og-rest-api-specification-v1.raml), which is very well exposed [here](http://ftp.opengear.com/download/api/lighthouse/og-rest-api-specification-v1.html).
+The client is tightly tied to the Lighthouse RESTful API RAML specification, which can be found [here](http://ftp.opengear.com/download/api/lighthouse/).
 
 ## Authentication
 
