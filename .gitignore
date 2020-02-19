@@ -2,9 +2,6 @@
 *.pyc
 __pycache__/*
 
-# ignore test files
-*test.py
-
 # jupyter stuff
 .ipynb_checkpoints/*
 *.ipynb
@@ -14,3 +11,6 @@ __pycache__/*
 
 # ignore egg info files
 oglhclient.egg-info/*
+
+# ignore edidor files
+.vscode

@@ -1,18 +1,26 @@
-# Lighthouse API client
+# Lighthouse API Client
 
 The client is tightly tied to the Lighthouse RESTful API RAML specification, which can be found [here](http://ftp.opengear.com/download/api/lighthouse/).
 
 ## Authentication
 
-The **Lighthouse API Client** expects to find the following environment variables:
+The **Lighthouse API Client** expects the following environment variables:
 
 - **(required)** `OGLH_API_USER` a valid Lighthouse user
 - **(required)** `OGLH_API_PASS` a valid Lighthouse user's password
-- **(required)** `OGLH_API_URL` the Lighthouse API url without `/api/v1`
+- **(required)** `OGLH_API_URL` the Lighthouse API URL without `/api/v3.4`
+
+They can be combined with optional parameters at instantiation:
+
+```python
+api = LighthouseApiClient(url = "https://192.168.0.10",
+                          username = "root",
+                          password = "myP@ssw0rd")
+```
 
 ## Conventions
 
-All the methods follow the convention specified as follows. A call for an *url* like:
+All the methods follow the convention that a call to an URL like:
 
 ```
 GET /system/global_enrollment_token HTTP/1.0
@@ -27,10 +35,10 @@ would be performed through the client as:
 >>> client.system.global_enrollment_token.get()
 ```
 
-Basically, all `/` must be replaced by `.` followed by an action:
+Basically, all `/` are replaced by `.` followed by an action as specified below.
 
 #### GET: `find()`
-Used when asking for a specific object
+Used when asking for a specific object.
 
 Example:
 
@@ -38,7 +46,7 @@ Example:
 GET /nodes/smartgroups/myGrouId HTTP/1.0
 ```
 
-Becomes:
+becomes:
 
 ```python
 smartgroup = client.nodes.smartgroups.find(id='myGrouId')
@@ -56,17 +64,17 @@ In case of a child object like in `/nodes/{id}/tags/{tag_value_id}`, with a poss
 GET /nodes/nodes-13/tags/London HTTP/1.0
 ```
 
-The python call should be:
+the Python call should be:
 
 
 ```python
-tag = client.nodes.tags.find(id='myTagId', parent_id='myNodeId')
+tag = client.nodes.tags.find(id='London', parent_id='node-13')
 ```
 
-Also possible to make:
+It is also possible to use:
 
 ```python
-tag = client.nodes.tags.find(id='myTagId', node_id='myNodeId')
+tag = client.nodes.tags.find(id='London', node_id='node-13')
 ```
 
 Always paying attention to the simple plural formatting removal:
@@ -75,7 +83,7 @@ Always paying attention to the simple plural formatting removal:
 - **properties**: *property*
 
 ### GET: `list()`
-Used when asking for a list of objects
+Used when asking for a list of objects.
 
 Example:
 
@@ -83,16 +91,16 @@ Example:
 GET /nodes/smartgroups HTTP/1.0
 ```
 
-Becomes:
+becomes:
 
 ```python
 smartgroups = client.nodes.smartgroups.list()
 ```
 
-parameters may apply like `page`, `per_page`, and so on:
+Parameters may apply, like `page`, `per_page`, and so on:
 
 ```python
-smartgroups = client.nodes.smartgroups.list(page=1,per_page=5)
+smartgroups = client.nodes.smartgroups.list(page=1, per_page=5)
 ```
 
 ### GET: `get()`
@@ -102,12 +110,11 @@ Only used when the two previous do not apply, like:
 GET /system/webui_session_timeout HTTP/1.0
 ```
 
-Becomes:
+which becomes:
 
 ```python
 timeout = client.system.webui_session_timeout.get()
 ```
-
 
 ### POST: `create()`
 As the name suggests, it is used to create objects, for instance:
@@ -115,53 +122,68 @@ As the name suggests, it is used to create objects, for instance:
 ```
 POST /tags/node_tags HTTP/1.0
 Content-Type: application/json
-
-{"node_tag": {"name": "Location","values": [{"value": "USA.NewYork"},{"value": "UK.London"}]}}
-```
-
-could be performed as:
-
-```python
-result = client.tags.node_tags.create(data={"username":"root","password":"default"})
-```
-
-### PUT: `update()`
-It is used to update a given object, like:
-
-```
-PUT /tags/node_tags/nodes_tags-1 HTTP/1.0
-Content-Type: application/json
-
-{"node_tag": {"name": "Location","values": [{"id": "tags_node_tags_values_90","value": "USA.NewYork"}]}}
+{"nodeTag": {"name": "Location", "values": [{"value": "USA.NewYork"}, {"value": "UK.London"}]}}
 ```
 
 could be performed as:
 
 ```python
 data = {
-  "node_tag": {
+  "nodeTag": {
     "name": "Location",
     "values": [
       {
-        "id": "tags_node_tags_values_90",
-        "value": "USA.NewYork"
+          "value": "USA.NewYork"
+      },
+      {
+          "value": "UK.London"
       }
     ]
   }
 }
-result = client.tags.node_tags.update(tag_value_id='nodes_tags-1', data=data)
+result = client.tags.node_tags.create(data)
+```
+
+### PUT: `update()`
+It is used to update a given object.
+
+Example:
+
+```
+PUT /tags/node_tags/nodes_tags-1 HTTP/1.0
+Content-Type: application/json
+{"nodeTag": {"name": "Location", "values": [{"id": "tags_node_tags_values_5", "value": "UK.Cambridge"}, {"value": France.Paris"}]}}
+```
+
+is performed as:
+
+```python
+data = {
+  "nodeTag": {
+    "name": "Location",
+    "values": [
+      {
+          "id": "tags_node_tags_values_5",
+          "value": "UK.Cambridge"
+      },
+      {
+          "value": "France.Paris"
+      }
+    ]
+  }
+}
+RESULT = client.tags.node_tags.update(id='tags_node_tags-1', data=data)
 ```
 
 ### DELETE: `delete()`
-
-It is used for deleting an object by its `id`, for instance:
+It is used to delete an object by its `id`, for instance:
 
 ```
 DELETE /tags/node_tags/nodes_tags-1 HTTP/1.0
 ```
 
-could be performed as:
+is performed as:
 
 ```python
-result = client.tags.node_tags.delete(tag_value_id='nodes_tags-1')
+result = client.tags.node_tags.delete(id='tags_node_tags-1')
 ```
