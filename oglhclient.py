@@ -15,8 +15,8 @@ install_aliases()
 
 def ensure_auth(f):
     """
-    Ensures the client has a valid sesssion id (token).
-    When a function is called and the client is not not authenticated,
+    Ensures the client has a valid session id (token).
+    When a function is called and the client is not authenticated,
     it will try to authenticate and call the function again.
     """
     def wrapper(*args, **kwargs):
@@ -27,6 +27,7 @@ def ensure_auth(f):
         return result
 
     return wrapper
+
 
 class LighthouseApiClient:
     """
@@ -226,7 +227,7 @@ class LighthouseApiClient:
                 kwargs['find'] = partial(self.find, path)
             elif k == 'get' and (len([l for l in top_children if re.match('\{.+\}', l)]) > 0
                     or
-                ('description' in node['get'] and 
+                ('description' in node['get'] and
                     re.match('.*(A|a|(T|t)he)\ (l|L)ist\ of', node['get']['description']))):
                 kwargs['list'] = partial(self.get, path)
             elif k == 'get':

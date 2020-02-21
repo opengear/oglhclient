@@ -68,13 +68,13 @@ the Python call should be:
 
 
 ```python
-tag = client.nodes.tags.find(id='London', parent_id='node-13')
+tag = client.nodes.tags.find(id='London', parent_id='nodes-13')
 ```
 
 It is also possible to use:
 
 ```python
-tag = client.nodes.tags.find(id='London', node_id='node-13')
+tag = client.nodes.tags.find(id='London', node_id='nodes-13')
 ```
 
 Always paying attention to the simple plural formatting removal:
@@ -117,7 +117,7 @@ timeout = client.system.webui_session_timeout.get()
 ```
 
 ### POST: `create()`
-As the name suggests, it is used to create objects, for instance:
+It is used to create objects or trigger actions (like a firmware upgrade), for instance:
 
 ```
 POST /tags/node_tags HTTP/1.0
@@ -172,7 +172,7 @@ data = {
     ]
   }
 }
-RESULT = client.tags.node_tags.update(id='tags_node_tags-1', data=data)
+result = client.tags.node_tags.update(id='tags_node_tags-1', data=data)
 ```
 
 ### DELETE: `delete()`

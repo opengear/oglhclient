@@ -12,5 +12,5 @@ __pycache__/*
 # ignore egg info files
 oglhclient.egg-info/*
 
-# ignore edidor files
+# ignore editor files
 .vscode
