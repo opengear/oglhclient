@@ -6,6 +6,7 @@ found here: http://ftp.opengear.com/download/api/lighthouse/
 """
 
 import json, os, re, requests, yaml
+
 from collections import namedtuple
 from functools import partial
 from future.standard_library import install_aliases
@@ -27,7 +28,6 @@ def ensure_auth(f):
         return result
 
     return wrapper
-
 
 class LighthouseApiClient:
     """
@@ -54,11 +54,12 @@ class LighthouseApiClient:
             ramlfile = os.path.join(os.path.dirname(__file__),
                 'og-rest-api-specification-v3-4.raml')
             with open(ramlfile, 'r') as stream:
-                self.raml = yaml.load(re.sub('\\\/','/',re.sub(':\"',': \"',stream.read())),
+                self.raml = yaml.load(re.sub('\t','  ',re.sub('\\\/','/',re.sub(':\"',': \"',stream.read()))),
                     Loader=yaml.FullLoader)
         except Exception:
             r = self.s.get('http://ftp.opengear.com/download/api/lighthouse/og-rest-api-specification-v3-4.raml')
-            self.raml = yaml.load(re.sub('\\\/','/',re.sub(':\"',': \"',r.text)), Loader=yaml.FullLoader)
+            self.raml = yaml.load(re.sub('\t','  ',re.sub('\\\/','/',re.sub(':\"',': \"',r.text))),
+                    Loader=yaml.FullLoader)
 
         if not isinstance(self.raml, dict):
             raise RuntimeError("""
