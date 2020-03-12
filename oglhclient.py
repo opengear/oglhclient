@@ -56,14 +56,16 @@ class LighthouseApiClient:
             with open(ramlfile, 'r') as stream:
                 self.raml = yaml.load(re.sub('\t','  ',re.sub('\\\/','/',re.sub(':\"',': \"',stream.read()))),
                     Loader=yaml.FullLoader)
-        except Exception:
+        except Exception as e:
+            print(e)
+            print("Trying remote file...")
             r = self.s.get('http://ftp.opengear.com/download/api/lighthouse/og-rest-api-specification-v3-4.raml')
             self.raml = yaml.load(re.sub('\t','  ',re.sub('\\\/','/',re.sub(':\"',': \"',r.text))),
-                    Loader=yaml.FullLoader)
+                Loader=yaml.FullLoader)
 
         if not isinstance(self.raml, dict):
             raise RuntimeError("""
-    Lighthouse RESTful API specification file wasn't found, locally nor
+    Lighthouse RESTful API specification couldn't be loaded, locally nor
     at http://ftp.opengear.com/download/api/lighthouse""")
 
         self.raml = self._fix_raml(self.raml)
