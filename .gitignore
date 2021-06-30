@@ -14,3 +14,8 @@ oglhclient.egg-info/*
 
 # ignore editor files
 .vscode
+
+# ignore build files
+build/*
+dist/*
+.eggs/*
